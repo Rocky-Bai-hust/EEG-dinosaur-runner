@@ -1,56 +1,41 @@
 # EEG Dinosaur Runner
 
-An Arduino-based EEG interaction prototype for a Python/Pygame dinosaur runner. A TGAM-compatible module supplies signal quality, attention and meditation indicators; the Arduino validates binary packets, detects blink candidates from raw-signal amplitude, and forwards compact text frames to the desktop game.
+An Arduino-based EEG interface for a Python/Pygame dinosaur runner. The Arduino reads a TGAM-compatible module, checks packets, detects blink candidates from raw-signal amplitude, and sends attention, meditation and signal-quality indicators to the game.
 
-This repository accompanies an educational hardware project. It contains the implementation and a reproducibility guide, without participant recordings or identifying course documents. No associated peer-reviewed publication, quantitative benchmark or clinical validation is claimed.
-
-## System overview
-
-```mermaid
-flowchart LR
-    A[TGAM-compatible EEG module] -->|57600 baud UART| B[Arduino UNO / Nano]
-    B -->|57600 baud USB serial| C[Background Python reader]
-    C --> D[Signal quality gate and control mapping]
-    D --> E[Pygame dinosaur runner and HUD]
-```
-
-The supplied sketch implements the wired UART-to-USB route. The course report also describes an HC-05 transparent Bluetooth transport; pairing commands and a complete Bluetooth wiring diagram are not included in this release.
-
-## Features and actual control behavior
-
-| Input / state | Implemented behavior |
-| --- | --- |
-| Blink candidate | One jump event, accepted when the desktop signal gate passes |
-| Effective attention >= 80 | 2.5-second sprint, +8 speed units and collision immunity; 7-second cooldown after completion |
-| Meditation >= 65 | Speed multiplier of 0.75 and a shield absorbing one collision; 8-second shield cooldown |
-| Poor signal / disconnected reader | EEG-triggered actions are gated; the supplied demo configuration can automatically jump nearby ground obstacles and low birds |
-| Keyboard | Jump, duck, pause/resume and restart |
-| HUD | Attention, meditation, signal quality, blink count, connection state, mode, shield and sprint state |
-
-The supplied `attention_speed_bonus()` currently returns **zero for every attention level**. Attention affects sprint triggering; the old tiered +2/+4/+6 speed description is not implemented. Base speed increases with score and is clamped to 5–30 units per frame. Attention and meditation are module-provided indicators, not estimators trained or validated by this project. Blink detection is an amplitude heuristic and may respond to artifacts.
-
-## Repository layout
+## Overview
 
 ```text
-arduino/arduino.ino       TGAM packet parser and blink-event forwarding
-dinosaur/main.py         Pygame game loop and visual feedback
-dinosaur/config.py       Serial configuration, thresholds and demo flags
-dinosaur/eeg_serial_reader.py  Background reader and simulator
-dinosaur/eeg_control.py   Signal gate and speed helpers
-dinosaur/Assets/          Third-party game sprites (see notices)
-docs/hardware.md          Wiring and firmware upload instructions
-docs/protocol.md          Packet and desktop frame details
-docs/reproducibility.md   Reproduction procedure and limitations
-examples/serial_frames.txt  Synthetic protocol examples
-tests/                   Hardware-independent checks
-LICENSE                  MIT terms for the explicitly listed original files
-THIRD_PARTY_NOTICES.md    Attribution and unresolved upstream licensing
-CITATION.cff             Software citation metadata
+TGAM module -- UART, 57600 baud --> Arduino UNO / Nano
+Arduino -- USB serial, 57600 baud --> Python reader --> Pygame game
+```
+
+| Input | Game behavior |
+| --- | --- |
+| Blink candidate | Jump when signal quality is acceptable |
+| Effective attention >= 80 | Sprint for 2.5 seconds with collision immunity; 7-second cooldown |
+| Meditation >= 65 | Reduce speed to 75% and enable a one-hit shield; 8-second shield cooldown |
+| Keyboard | Jump, duck, pause and restart |
+
+Attention affects sprint triggering; ordinary attention-based speed bonuses are disabled in this implementation. The HUD displays EEG indicators, connection state, blink count and game modes.
+
+## Files
+
+```text
+arduino/arduino.ino          Firmware: packet parsing and blink detection
+dinosaur/main.py            Game and HUD
+dinosaur/config.py          Ports, thresholds and demo settings
+dinosaur/eeg_serial_reader.py  Serial reader and simulator
+dinosaur/eeg_control.py      Control helpers
+dinosaur/Assets/             Game sprites
+requirements.txt            Python dependencies
+CITATION.cff                Software citation metadata
+LICENSE                     License for the listed original files
+THIRD_PARTY_NOTICES.md       Game attribution and license scope
 ```
 
 ## Installation
 
-Use Python 3.9 or later and a graphical desktop. Windows is the original project environment; other platforms have not been tested with the hardware. Arduino IDE 2.x and an AVR UNO/Nano-compatible board are required for firmware upload. The sketch uses the Arduino core only.
+Use Python 3.9 or later and a graphical desktop. The hardware setup requires Arduino IDE and an UNO/Nano-compatible AVR board.
 
 ```bash
 git clone https://github.com/Rocky-Bai-hust/EEG-dinosaur-runner.git
@@ -58,91 +43,94 @@ cd EEG-dinosaur-runner
 python -m venv .venv
 ```
 
-Activate the environment on Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-Or on Linux/macOS:
-
-```bash
-source .venv/bin/activate
-```
-
-Then install dependencies:
+Activate the environment with `.venv\Scripts\Activate.ps1` in Windows PowerShell, or `source .venv/bin/activate` on Linux/macOS, then install dependencies:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-The dependency ranges specify compatible APIs; they are not a lockfile for the historical course environment. Record your resolved versions when reporting experiments.
+## Hardware setup
 
-## Run without EEG hardware
+| Connection | Destination |
+| --- | --- |
+| TGAM TX | Arduino D0/RX |
+| TGAM GND | Arduino GND |
+| TGAM RX | Leave disconnected |
+| Arduino USB | Computer |
 
-For keyboard-only operation, edit **your cloned copy** of `dinosaur/config.py`:
+Verify the module's supply voltage and UART logic compatibility with its vendor specifications.
+
+1. Disconnect TGAM TX from D0/RX before uploading.
+2. Open `arduino/arduino.ino` in Arduino IDE, select the board and port, and upload.
+3. Reconnect TGAM TX and close the serial monitor.
+4. Update `dinosaur/config.py`:
+
+```python
+SERIAL_ENABLED = True
+SIMULATE_EEG = False
+SERIAL_PORT = "COM7"  # Replace with your actual port.
+SERIAL_BAUD = 57600
+```
+
+Run from the repository root:
+
+```bash
+python dinosaur/main.py
+```
+
+Press any key at the menu. The default startup gate requires a connected reader and SIG=0 for 2 seconds. During gameplay, EEG input requires SIG <= 10; the firmware's blink gate uses SIG <= 50.
+
+The supplied sketch implements the wired route. HC-05 pairing and configuration are not included.
+
+## Run without hardware
+
+For keyboard-only play, set:
 
 ```python
 SERIAL_ENABLED = False
 IN_GAME_BAD_SIGNAL_AUTOPILOT = False
 ```
 
-Disabling serial bypasses the startup gate. Disabling autopilot ensures jumps come from keyboard input.
-
-For simulated EEG instead:
+For simulated EEG, set:
 
 ```python
 SERIAL_ENABLED = True
 SIMULATE_EEG = True
 ```
 
-The simulator supplies random ATT/MED values, SIG=0 and periodic blink candidates; it is intended for functional demonstrations, not performance measurement. Start the game from the repository root:
+Then run `python dinosaur/main.py`. Simulation generates random indicators and blink candidates.
 
-```bash
-python dinosaur/main.py
+| Key | Action |
+| --- | --- |
+| Up / Space | Jump |
+| Down | Duck |
+| Q | Pause / resume |
+| R while paused | Restart |
+| Escape on the connection screen | Return to menu |
+
+## Serial format
+
+The Arduino sends newline-terminated text at 57600 baud:
+
+```text
+ATT:65,MED:48,SIG:0,BLINK:1,COUNT:3
 ```
 
-Press any key at the menu. Up arrow or Space jumps; Down arrow ducks; Q or the on-screen pause button pauses/resumes; R restarts while paused. Escape returns from the connection screen to the menu. Close the window to exit.
+`ATT` and `MED` are module indicators, typically 0–100. `SIG` is poor-signal quality, with lower values indicating better contact. `BLINK:1` latches a one-shot jump candidate; `COUNT` is the cumulative candidate count.
 
-## Run with Arduino and EEG hardware
+The firmware handles fixed 4-byte raw and 32-byte digest payload layouts. Blink detection uses an absolute raw-amplitude threshold of 1050 and a 350 ms refractory interval.
 
-1. Follow [hardware setup](docs/hardware.md), including the D0/RX upload precaution.
-2. Open `arduino/arduino.ino` in Arduino IDE, select the actual board and port, and upload.
-3. Reconnect the module data wire and close the IDE serial monitor so Python can open the port.
-4. Set `SERIAL_ENABLED = True`, `SIMULATE_EEG = False`, `SERIAL_PORT` to your device port, and `SERIAL_BAUD = 57600` in `dinosaur/config.py`. `COM7` is an example inherited from the course setup, not a universal port.
-5. Run `python dinosaur/main.py` and press a key. The default startup gate requires a connected reader and SIG=0 for 2000 ms before a run begins.
+## Configuration and limitations
 
-During gameplay, the desktop signal gate accepts SIG <= 10. The firmware blink gate accepts SIG <= 50 and requires at least one positive attention/meditation indicator. These are different thresholds in the supplied implementation; see [protocol details](docs/protocol.md).
+The default demonstration settings enable adaptive jump clearance, automatic jumps during bad signal, and a successful-pass bonus to effective attention. Disable `ENABLE_MIN_JUMP_CLEARANCE`, `IN_GAME_BAD_SIGNAL_AUTOPILOT` and `ENABLE_FOCUS_SUCCESS_ASSIST` when evaluating unassisted EEG control.
 
-## Reproduction and validation
+- If the connection screen remains open, check the port, baud rate and SIG. Close any application using the serial port.
+- The reader has no inactivity timeout or automatic reconnect; a silent link may retain stale values. Restart after restoring the connection.
+- Blink detection is an amplitude heuristic and can react to artifacts.
+- Hardware performance has not been independently validated for this release. No EEG dataset or quantitative benchmark is included.
 
-```bash
-python -m unittest discover -s tests -v
-python -m compileall -q dinosaur tests
-```
+For reproducible use, record the exact commit, software versions, hardware model, thresholds and assistance flags. Use GitHub's **Cite this repository** metadata to cite the software.
 
-The automated checks cover text parsing, one-shot blink consumption, state snapshots, signal thresholds and speed bounds. They do not establish hardware reliability or scientific validity. [Reproducibility notes](docs/reproducibility.md) describe a manual end-to-end checklist and the demo assists that must be controlled before collecting results.
+## Attribution and license
 
-## Troubleshooting
-
-- **Connecting EEG Device does not finish:** check the port, baud rate, module connection and SIG=0. For a hardware-free run use one of the explicit modes above; the default configuration deliberately waits for hardware.
-- **Port cannot be opened:** close other serial applications, verify the USB driver and list ports with `python -m serial.tools.list_ports`.
-- **Unexpected jumps:** disable `IN_GAME_BAD_SIGNAL_AUTOPILOT`, check signal quality and tune firmware blink thresholds for your module. Simulator and optional EEG test hotkeys also introduce synthetic input.
-- **EEG stops updating:** the reader has no inactivity timeout or automatic reconnect. Silent links may retain old values. Restart the application after correcting the connection.
-- **Different packet layout:** the firmware handles two fixed TGAM payload layouts, not every possible ThinkGear data record.
-
-## Research scope and data availability
-
-No raw EEG dataset, participant identifiers, images of participants, personal contact details, enrollment records or course submissions are distributed. The example frames are synthetic. Quantitative accuracy, latency, false-positive rate and participant-study outcomes are not available in this release. Report hardware, module firmware, software versions, thresholds and assistance flags alongside any future measurements.
-
-## Citation
-
-Use the repository's `CITATION.cff` / GitHub “Cite this repository” metadata and include the exact commit used. The citation identifies the contributor group without publishing individual names. This is software metadata, not a fabricated paper citation or DOI.
-
-## Attribution and license scope
-
-The game derives from [MaxRohowsky/chrome-dinosaur](https://github.com/MaxRohowsky/chrome-dinosaur). Public upstream attribution is retained in [third-party notices](THIRD_PARTY_NOTICES.md). An explicit upstream license was not found in the supplied archive or the upstream root during preparation.
-
-The MIT license covers only the original files listed in [LICENSE](LICENSE). It does **not** relicense `dinosaur/main.py` or `dinosaur/Assets/`. Those portions are provided with their provenance and unresolved licensing status; a fully permissively licensed distribution requires upstream permission or replacement. Do not interpret this repository as granting rights to all third-party material.
-
-Contributions should include reproducible evidence and avoid personal data; see [CONTRIBUTING.md](CONTRIBUTING.md).
+The game derives from [MaxRohowsky/chrome-dinosaur](https://github.com/MaxRohowsky/chrome-dinosaur). The [MIT license](LICENSE) covers the listed original files only. The game code and sprites have unresolved upstream licensing and are excluded from that grant; see [third-party notices](THIRD_PARTY_NOTICES.md).
