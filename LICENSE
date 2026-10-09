@@ -8,7 +8,9 @@ The MIT terms below apply only to:
 - documentation and repository configuration newly added for this release
 
 Excluded: dinosaur/main.py and dinosaur/Assets/* contain third-party-derived
-material and are NOT relicensed by this file. See THIRD_PARTY_NOTICES.md.
+material and are NOT relicensed by this file. Gameplay screenshots and demo
+clips in media/ do not extend the MIT grant to that artwork.
+See THIRD_PARTY_NOTICES.md.
 
 MIT License
 

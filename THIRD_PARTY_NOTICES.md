@@ -5,3 +5,5 @@ The game is derived from [MaxRohowsky/chrome-dinosaur](https://github.com/MaxRoh
 `dinosaur/main.py` and `dinosaur/Assets/` contain upstream-derived code and sprites. No explicit upstream license was found during preparation. These files are excluded from this repository's MIT grant; attribution does not grant redistribution or reuse rights. Obtain upstream permission or replace them before claiming a fully permissively licensed distribution.
 
 Pygame, pyserial and Arduino board cores are installed separately and retain their own licenses.
+
+Gameplay screenshots, animations and video clips in `media/` depict the same upstream-derived artwork and do not grant additional rights to it. The hardware photograph is taken from the project's own report.
