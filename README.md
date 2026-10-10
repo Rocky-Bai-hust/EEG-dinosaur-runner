@@ -2,19 +2,23 @@
 
 # EEG Dinosaur Runner
 
-**An Arduino-powered dinosaur game with blink, attention and relaxation input.**
+**Blink to jump. Relax to shield. Focus to sprint.**
+
+An EEG-controlled dinosaur runner built with **Arduino, NeuroSky TGAM and Python/Pygame**.
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
 ![Arduino](https://img.shields.io/badge/Arduino-UNO%20%2F%20Nano-00878F?logo=arduino&logoColor=white)
 ![Pygame](https://img.shields.io/badge/Game-Pygame-4B8B3B)
 
-[Demo](#demo) · [Quick start](#quick-start) · [Hardware](#hardware) · [How it works](#how-it-works)
+[Watch the demo](#demo) · [Play without hardware](#quick-start) · [Build the EEG setup](#hardware) · [How it works](#how-it-works)
 
 </div>
 
 Bring EEG and blink input into a familiar endless runner. A TGAM-compatible module supplies brain-state indicators and raw samples; an Arduino turns them into compact serial messages, and a Pygame game responds with jumps, protective shields and short bursts of speed.
 
 Built as a hardware course project, the system connects signal acquisition, embedded packet parsing and live visual feedback in one playable prototype. The desktop game also supports keyboard controls and a software simulator, so its interaction mechanics can be explored without the headset.
+
+**No headset? You can still try it.** The command-line launcher starts in keyboard mode, or generates synthetic EEG input for a hardware-free demonstration. Only real EEG mode needs an Arduino and acquisition module.
 
 ## Demo
 
@@ -87,40 +91,33 @@ Install the dependencies:
 python -m pip install -r requirements.txt
 ```
 
-### 2. Choose an input mode
+### 2. Play — no configuration edits required
 
-Edit `dinosaur/config.py` in your clone.
-
-**Keyboard only** — start immediately without a headset:
-
-```python
-SERIAL_ENABLED = False
-IN_GAME_BAD_SIGNAL_AUTOPILOT = False
-```
-
-**Simulated EEG** — explore the HUD, shields and sprints with generated input:
-
-```python
-SERIAL_ENABLED = True
-SIMULATE_EEG = True
-```
-
-**Real EEG** — connect the hardware described below:
-
-```python
-SERIAL_ENABLED = True
-SIMULATE_EEG = False
-SERIAL_PORT = "COM7"  # Replace with the actual Arduino port.
-SERIAL_BAUD = 57600
-```
-
-### 3. Play
+**Keyboard only** — no Arduino, headset or serial port needed:
 
 ```bash
-python dinosaur/main.py
+python play.py
 ```
 
-Press any key at the menu. In real EEG mode, the default connection screen waits for **SIG=0 for 2 seconds** before starting.
+Press any key at the menu, then use **Space / Up** to jump and **Down** to duck. This mode disables automatic jumping and the classroom jump/focus assists.
+
+**Simulated EEG** — explore the indicators, shields and sprints with generated input:
+
+```bash
+python play.py --simulate
+```
+
+The simulator opens no serial port. It demonstrates the software interaction pipeline; it does not measure a person's brain activity.
+
+**Real EEG** — connect the [hardware](#hardware), then supply the actual Arduino port:
+
+```bash
+python play.py --eeg --port COM7
+```
+
+On Linux or macOS, replace `COM7` with the appropriate device path. The firmware and desktop use **57600 baud**. The default connection screen waits for **SIG=0 for 2 seconds** before starting.
+
+Run `python play.py --help` to see the options. Advanced thresholds remain in `dinosaur/config.py`; the launcher applies mode settings in memory and leaves that file unchanged. The original `python dinosaur/main.py` entry point remains available and uses its saved configuration.
 
 | Control | Action |
 | --- | --- |
@@ -150,7 +147,7 @@ Verify the particular module's power and UART logic requirements before wiring.
 1. **Disconnect the module TX wire from D0/RX before uploading.** This pin is also used by the bootloader.
 2. Open `arduino/arduino.ino` in Arduino IDE, select the actual board and port, and upload.
 3. Reconnect the module TX wire. Close the serial monitor before starting Python.
-4. Set the real EEG configuration above, then launch the game.
+4. Launch with `python play.py --eeg --port COM7`, replacing the port with your actual device.
 
 Both sides use **57600 baud**. During gameplay the desktop accepts EEG input at SIG <= 10; firmware blink detection uses SIG <= 50 and requires a valid digest with positive attention or meditation.
 
@@ -178,6 +175,7 @@ The firmware recognizes fixed 4-byte raw and 32-byte digest payloads. Blink dete
 ## Project structure
 
 ```text
+play.py                        Keyboard / simulator / real-EEG launcher
 arduino/arduino.ino             TGAM parser and blink-event forwarding
 dinosaur/main.py               Game loop, abilities and HUD
 dinosaur/config.py             Serial settings and control thresholds
@@ -196,6 +194,12 @@ The supplied settings favor classroom demonstrations. Adaptive jump clearance, b
 Attention and meditation are indicators provided by the module. Blink detection is an amplitude heuristic that can react to artifacts. Ordinary attention speed tiers are disabled in the supplied code; attention changes speed through sprint activation. The reader has no inactivity timeout or automatic reconnect, so restart the application after restoring a lost connection.
 
 If the connection screen stays open, check the port, baud rate and SIG, and close other serial applications. To find the port, run `python -m serial.tools.list_ports`.
+
+## Help improve the project
+
+Reproduction feedback is especially useful: [open an issue](https://github.com/Rocky-Bai-hust/EEG-dinosaur-runner/issues/new) with your operating system, Python version, input mode and the exact error. For hardware reports, include the board/module model and signal indicator, and remove personal information from logs.
+
+Useful contributions include testing the setup on other operating systems, documenting compatible TGAM modules, and improving connection recovery. Pull requests are welcome. If this project helps your learning or prototyping, a Star makes it easier to find again.
 
 ## Citation and acknowledgements
 

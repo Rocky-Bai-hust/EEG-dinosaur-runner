@@ -1,6 +1,7 @@
 License scope
 
 The MIT terms below apply only to:
+- play.py
 - arduino/arduino.ino
 - dinosaur/config.py
 - dinosaur/eeg_control.py
