@@ -184,7 +184,6 @@ dinosaur/eeg_control.py         Signal gate and speed helpers
 dinosaur/Assets/               Game sprites
 media/                         Report images and edited demo excerpts
 requirements.txt               Desktop dependencies
-CITATION.cff                   Software citation metadata
 ```
 
 ## Configuration notes
@@ -201,10 +200,18 @@ Reproduction feedback is especially useful: [open an issue](https://github.com/R
 
 Useful contributions include testing the setup on other operating systems, documenting compatible TGAM modules, and improving connection recovery. Pull requests are welcome. If this project helps your learning or prototyping, a Star makes it easier to find again.
 
-## Citation and acknowledgements
+## Citation
 
-Use GitHub's **Cite this repository** option and include the exact commit used. For reproducible experiments, also record software versions, hardware model, thresholds and assist settings. This educational prototype does not include a participant dataset or a quantitative performance benchmark.
+When citing this project, include its title, [repository URL](https://github.com/Rocky-Bai-hust/EEG-dinosaur-runner) and the exact commit used. For reproducible experiments, also record software versions, hardware model, thresholds and assist settings. This educational prototype does not include a participant dataset or a quantitative performance benchmark.
 
-The desktop game builds on [MaxRohowsky/chrome-dinosaur](https://github.com/MaxRohowsky/chrome-dinosaur), with Arduino parsing and EEG interaction added by this project.
+## Credits and license
 
-The [MIT license](LICENSE) covers the listed original files only. Upstream game code and sprites have unresolved licensing and are excluded from that grant; see [third-party notices](THIRD_PARTY_NOTICES.md).
+The [MIT license](LICENSE) covers the listed original components, including the Arduino firmware, EEG modules and launcher. The game code and artwork described below are excluded from that grant.
+
+The game is derived from [MaxRohowsky/chrome-dinosaur](https://github.com/MaxRohowsky/chrome-dinosaur).
+
+`dinosaur/main.py` and `dinosaur/Assets/` contain upstream-derived code and sprites. No explicit upstream license was found during preparation. These files are excluded from this repository's MIT grant; attribution does not grant redistribution or reuse rights. Obtain upstream permission or replace them before claiming a fully permissively licensed distribution.
+
+Pygame, pyserial and Arduino board cores are installed separately and retain their own licenses.
+
+Gameplay screenshots, animations and video clips in `media/` depict the same upstream-derived artwork and do not grant additional rights to it. The hardware photograph is taken from the project's own report.
